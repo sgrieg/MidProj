@@ -31,93 +31,71 @@ library(scales)
 library(plotly)
 
 #Import Dataset
-#OpioidData = read.csv("C:/Users/diane/Downloads/Dispensing_Rates.csv") #make sure its forward slash
-OpioidData = read.csv("State Opioid Dispensing Rates.csv")
+OpioidData = read.csv("C:/Users/Sean/Desktop/State Opioid Dispensing Rates.csv") #make sure its forward slash
 
-# --- Prepare long_data (include both 2019 and 2023) ---
+#CreatingDataset
 long_data <- OpioidData %>%
   filter(YEAR %in% c(2019, 2023)) %>%
   rename(Year = YEAR, Rate = opioid_dispensing_rate) %>%
   group_by(STATE_NAME, STATE_ABBREV) %>%
   mutate(
-    pct_change = (Rate[Year == 2023] - Rate[Year == 2019]) / Rate[Year == 2019] * 100
-  ) %>%
-  ungroup()
+    pct_change = round((Rate[Year == 2023] - Rate[Year == 2019]) / Rate[Year == 2019] * 100)) #round is nearest .1 #trying to add percent change
 
-# --- Order states by 2019 rates ---
+# Makes the graph go Descending
 ordered_states <- long_data %>%
   filter(Year == 2019) %>%
   arrange(desc(Rate)) %>%
   pull(STATE_ABBREV)
 
-long_data <- long_data %>%
-  mutate(STATE_ABBREV = factor(STATE_ABBREV, levels = ordered_states))
+long_data$STATE_ABBREV <- factor(long_data$STATE_ABBREV, levels = ordered_states)
 
-# --- Add hover text ---
-long_data <- long_data %>%
-  mutate(
-    hover_text = paste0(
-      "<b>State:</b> ", STATE_NAME,
-      "<br><b>Year:</b> ", Year,
-      "<br><b>Rate:</b> ", round(Rate, 2),
-      "<br><b>% Change (2019→2023):</b> ", round(pct_change, 1), "%"
-    )
-  )
 
-# --- Build overlay comparison bar chart ---
-stackedbar_plotly_h <- plot_ly() %>%
-  # 2019 = background bar
-  add_trace(
+stackedbar <- ggplot() +
+  # 2019 bars (red - bad)
+  geom_col(
     data = long_data %>% filter(Year == 2019),
-    x = ~Rate,
-    y = ~STATE_ABBREV,
-    type = "bar",
-    orientation = "h",
-    name = "2019",
-    marker = list(color = "rgba(255,0,0,0.4)"),  # transparent red
-    text = ~hover_text,
-    hoverinfo = "text"
-  ) %>%
-  # 2023 = overlay bar
-  add_trace(
+    aes(x = STATE_ABBREV, y = Rate, Year = "2019"),
+    fill = "red", alpha = 0.4, width = 0.6
+  ) +
+  # 2023 bars (blue)
+  geom_col(
     data = long_data %>% filter(Year == 2023),
-    x = ~Rate,
-    y = ~STATE_ABBREV,
-    type = "bar",
-    orientation = "h",
-    name = "2023",
-    marker = list(color = "rgba(0,0,139,0.8)"),  # dark blue
-    text = ~hover_text,
-    hoverinfo = "text"
-  ) %>%
-  layout(
-    barmode = "overlay",
-    title = "Opioid Dispensing Rates by State: 2019 vs 2023",
-    xaxis = list(title = "Rate (per 100 persons)"),
-    yaxis = list(title = "State", categoryorder = "array", categoryarray = rev(ordered_states)),
-    legend = list(title = list(text = "Year"))
-  )
+    aes(x = STATE_ABBREV, y = Rate, Year = "2023"),
+    fill = "blue", width = 0.6
+  ) +
+  labs(
+    x = "State",
+    y = "Opioid Dispensing Rate",
+    title = "Opioid Dispensing Rates by State",
+    subtitle ="2023 Blue"
+  ) +
+  
+    scale_fill_manual(
+    values = c("2019" = "red", "2023" = "blue"),
+    labels = c("2019" = "Year 2019", "2023" = "Year 2023")
+  )+
+  theme_minimal() +coord_flip()
+
+(stackedbar)
+
+plotlycoverted <- ggplotly (stackedbar)
 ```
 
 ```{r}
 #| echo: false
-(stackedbar_plotly_h)
+(plotlycoverted)
 ```
 
 The stacked bar graph compares **opioid dispensing rates** between **2019 and 2023** for each state, highlighting how rates have changed over time.
 
 You can **toggle between 2019, 2023, or view both years together** to see trends more clearly.\
-This design highlights both the **absolute rates** and the **change over time**, making it easy to see which states made the greatest progress and which showed minimal change or slight increases.
+This design highlights both the **absolute rates**, making it easy to see which states made the greatest progress and which showed minimal change or slight increases.
 
-By displaying both years in one interactive chart, the visualization helps viewers quickly identify national patterns and understand how opioid dispensing rates have shifted over the four-year period.
+The visualization helps viewers quickly identify national patterns and understand how opioid dispensing rates have shifted over the four-year period.
 
 **Key Features:**
 
 -   Highlights the **decrease** in opioid dispensing rates over time.
-
--   Allows viewers to **toggle between 2019, 2023, or display both years together**.
-
--   The graph shows both the **2019 baseline** and the **2023 value**, making it easy to compare absolute rates.
 
 -   You can quickly identify **which states had the largest decreases**, as well as states with minimal change or slight increases.
 
@@ -127,83 +105,43 @@ By displaying both years in one interactive chart, the visualization helps viewe
 
 ```{r}
 #| include: false
+#| 
 library(plotly)
 library(dplyr)
 library(tidyr)
+library(usmap)
 
-#MapOpioid <- read.csv("C:/Users/diane/Downloads/Dispensing_Rates.csv") %>%
-MapOpioid <- read.csv("State Opioid Dispensing Rates.csv") %>%
+MapRedesign <- read.csv("C:/Users/Sean/Desktop/State Opioid Dispensing Rates.csv") %>%
   filter(YEAR %in% c(2019, 2023))
 
-# --- 2️⃣ Pivot wider so we have columns for 2019 and 2023 rates ---
-wide_data <- MapOpioid %>%
+#adds 2019 & 2023 columns
+BothYears <- MapRedesign %>%
   select(STATE_NAME, STATE_ABBREV, YEAR, opioid_dispensing_rate) %>%
-  pivot_wider(names_from = YEAR, values_from = opioid_dispensing_rate)
+  pivot_wider(names_from = YEAR, values_from = opioid_dispensing_rate) %>%
+  rename(state = STATE_NAME)  
 
-# --- 3️⃣ Prepare hover text for each year ---
-wide_data <- wide_data %>%
-  mutate(
-    hover_2019 = paste0(STATE_NAME, "<br>2019 Rate: ", `2019`),
-    hover_2023 = paste0(STATE_NAME, "<br>2023 Rate: ", `2023`)
-  )
+#creates the map
+mapOp <- plot_usmap(data = BothYears, values = "2019") +
+  scale_fill_continuous(
+    name = "Opioid Rates 2019",
+    low = "#FFE5E5",
+    high = "#CC0000",
+    label = scales::comma
+  ) +
+  theme(legend.position = "right") +
+  ggtitle("US Opioid Dispensing Rates by State (2019)")
 
-# --- 4️⃣ Map options ---
-g <- list(
-  scope = 'usa',
-  projection = list(type = 'albers usa'),
-  showlakes = TRUE,
-  lakecolor = toRGB('white')
+#More interactive with hover and plotly
+# Create hover text
+BothYears$hover <- paste0(
+  "<b>State:</b> ", BothYears$STATE_NAME, "<br>",
+  "<b>2019 Rate:</b> ", BothYears$`2019`
 )
 
-# --- 5️⃣ Create the map ---
-fig <- plot_geo(wide_data, locationmode = 'USA-states')
+# Convert to interactive Plotly
+mapOp_interactive <- ggplotly(mapOp, tooltip = "fill")
 
-# Add 2019 trace (initially visible)
-fig <- fig %>% add_trace(
-  z = ~`2019`,
-  text = ~hover_2019,               # custom hover text
-  hoverinfo = "text",               # 👈 ensures it shows only our text
-  locations = ~STATE_ABBREV,
-  color = ~`2019`,
-  colors = 'Reds',
-  visible = TRUE,
-  name = "2019"
-)
-
-# Add 2023 trace (initially hidden)
-fig <- fig %>% add_trace(
-  z = ~`2023`,
-  text = ~hover_2023,               # custom hover text
-  hoverinfo = "text",               # 👈 same here
-  locations = ~STATE_ABBREV,
-  color = ~`2023`,
-  colors = 'Reds',
-  visible = FALSE,
-  name = "2023"
-)
-
-# --- 6️⃣ Add dropdown menu to toggle years ---
-fig <- fig %>% layout(
-  title = "Opioid Dispensing Rates by State",
-  geo = g,
-  updatemenus = list(
-    list(
-      type = "dropdown",
-      active = 0,
-      buttons = list(
-        list(method = "update",
-             args = list(list(visible = c(TRUE, FALSE)),
-                         list(title = "Opioid Dispensing Rates: 2019")),
-             label = "2019"),
-        list(method = "update",
-             args = list(list(visible = c(FALSE, TRUE)),
-                         list(title = "Opioid Dispensing Rates: 2023")),
-             label = "2023")
-      )
-    )
-  ),
-  colorbar = list(title = "Rate per 100 persons")
-)
+mapOp_interactive
 ```
 
 ```{r}
@@ -211,7 +149,7 @@ fig <- fig %>% layout(
 #| message: false
 #| warning: false
 #| paged-print: false
-(fig)
+(mapOp_interactive)
 ```
 
 The heat map visualizes **opioid dispensing rates** across the U.S., using color intensity to show severity — the darker the red, the more severe the rate in that state.
@@ -221,8 +159,6 @@ The heat map visualizes **opioid dispensing rates** across the U.S., using color
 -   **Red indicates higher rates**, with darker red showing the most severe dispensing levels.
 
 -   Uses a **continuous color scale** instead of categories, showing the full range of values.
-
--   Allows viewers to **toggle between 2019 and 2023**, making changes over time easy to see.
 
 -   Makes it easier to **identify regional clusters** of high opioid dispensing.
 
