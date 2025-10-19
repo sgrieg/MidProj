@@ -105,7 +105,6 @@ The visualization helps viewers quickly identify national patterns and understan
 
 ```{r}
 #| include: false
-#| 
 library(plotly)
 library(dplyr)
 library(tidyr)

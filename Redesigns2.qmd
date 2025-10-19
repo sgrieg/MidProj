@@ -13,6 +13,7 @@ library(dplyr)
 library(scales)
 library(tigris)
 library(sf)
+library(forcats)
 city_rain <- read.csv("City_Rain.csv")
 ```
 
@@ -34,23 +35,13 @@ This is a map from WorldAtlas of the top ten driest cities in the United States.
 
 ```{r}
 #| echo: false
-city_rain2 <- rbind(city_rain, data.frame(
-  City = "U.S. Average Value",
-  InchesOfRain = 2.5,
-  Rank = NA,
-  Latitude = NA,
-  Longitude = NA,
-  ElevationFeet = NA,
-  MetroAreaPopJuly1st2024 = NA,
-  AnnualAVGHighTemperatureF = NA,
-  AnnualAVGLowTemperatureF = NA,
-  AnnualAVGRelativeHumidity = NA
-))
+# Add US Average Rainfall
+city_rain2 <- city_rain %>%
+  add_row(City = "U.S. Average Value", InchesOfRain = 2.5)
 
 # Plot
-library(ggplot2)
-ggplot(city_rain2, aes(x = reorder(City, -InchesOfRain), y = InchesOfRain)) +
-  geom_bar(stat = "identity", fill = "#deebf7", color = "black") +
+ggplot(city_rain2, aes(x = fct_reorder(City, -InchesOfRain), y = InchesOfRain)) +
+  geom_col(fill = "#deebf7", color = "black") +
   labs(title = "10 U.S. Cities with the Least Rainfall",
        x = "City",
        y = "Inches of Rain (Monthly AVG)") +
