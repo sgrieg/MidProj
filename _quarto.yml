@@ -1,0 +1,29 @@
+project:
+  type: website
+  output-dir: docs
+
+website:
+  title: "Visualizing Insight"
+  navbar:
+    left:
+      - href: index.qmd
+        text: Home
+      - href: Redesigns1.qmd
+        text: Visualization & Redesigns 1
+      - href: Redesigns2.qmd
+        text: Visualization & Redesigns 2
+      - href: Code.qmd
+        text: Code
+      - href: Present.qmd
+        text: Video Presentation
+
+format:
+  html:
+    theme:
+      - cosmo
+      - brand
+    css: styles.css
+    toc: true
+
+editor: visual
+

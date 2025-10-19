@@ -1,0 +1,151 @@
+---
+title: "Redesign of The Ten Driest Cities in the United States"
+---
+
+# Original Map
+
+```{r}
+#| include: false
+#Setup Code
+library(ggplot2)
+library(leaflet)
+library(dplyr)
+library(scales)
+library(tigris)
+library(sf)
+city_rain <- read.csv("City_Rain.csv")
+```
+
+Source: https://www.worldatlas.com/climate/the-10-driest-cities-in-the-united-states.html ![](The%20Ten%20Driest%20Cities%20in%20the%20United%20States.png){fig-alt="Map of ten driest cities" width="80%"}
+
+This is a map from WorldAtlas of the top ten driest cities in the United States. The map is stylized and emphasizes the rankings of each of the ten driest cities. It features nice graphics, such as the drop-shaped map pins and the globe with a thermometer in the top left.
+
+**Issues With the Map:**
+
+-   The black borders of the states containing the selected cities make the black label pointer lines harder to follow.
+
+-   The information takes a while to gather because the map is busy with spread out information.
+
+-   The color choice is counterintuitive to read because light-to-dark color scales often have the high values represented with the darker shades of color. Having the raindrop-shaped rankings getting darker, to me, implies that there is more rain for the darker drops. The red color may have been chosen to represent heat or an extreme and unfavorable value.
+
+-   The title of the map isn’t exactly what is being measured. Depending on what someone means by “dryness”, inches of rain per month as a lone metric could be an insufficient indicator. Measurements like humidity, temperature, and sun exposure could all arguably be equally important indicators or at least factor into a city’s dryness.
+
+# **Bar Graph Redesign**
+
+```{r}
+#| echo: false
+city_rain2 <- rbind(city_rain, data.frame(
+  City = "U.S. Average Value",
+  InchesOfRain = 2.5,
+  Rank = NA,
+  Latitude = NA,
+  Longitude = NA,
+  ElevationFeet = NA,
+  MetroAreaPopJuly1st2024 = NA,
+  AnnualAVGHighTemperatureF = NA,
+  AnnualAVGLowTemperatureF = NA,
+  AnnualAVGRelativeHumidity = NA
+))
+
+# Plot
+library(ggplot2)
+ggplot(city_rain2, aes(x = reorder(City, -InchesOfRain), y = InchesOfRain)) +
+  geom_bar(stat = "identity", fill = "#deebf7", color = "black") +
+  labs(title = "10 U.S. Cities with the Least Rainfall",
+       x = "City",
+       y = "Inches of Rain (Monthly AVG)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+This simple ordered bar chart allows the viewer to very quickly see that the 10 driest cities have roughly 30-15% of the rainfall of the US national average. This is information that can not be gathered from looking at the original map. To be fair, right under the original map, it is stated that "In most of the United States, rainfall averages close to 30 inches a year, but some cities get less than a third of that." This bar graph just conveys that information so much more efficiently.
+
+Another great thing about this ordered bar chart is that you can quickly compare the values of different cities and see how minor or major the differences in their rainfall values are.
+
+# **Dynamic Map Redesign**
+
+**Top Ten U.S. Cities with the Least Rainfall**
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+
+# Set options to suppress tigris progress bar and enable caching
+options(tigris_progress = FALSE, tigris_use_cache = TRUE)
+
+# Load and prepare US state shapes
+states <- states(cb = TRUE, resolution = "20m") %>%
+  st_transform("+proj=longlat +datum=WGS84")
+
+# Create rainfall color palette
+rain_pal <- colorNumeric(palette = "Blues", domain = city_rain$InchesOfRain)
+
+# Build Leaflet map
+leaflet(city_rain) %>%
+  addProviderTiles(providers$Esri.WorldImagery) %>%
+  fitBounds(-125, 24, -66, 50) %>%
+  addPolygons(
+    data = states,
+    fill = FALSE,
+    weight = 1,
+    color = "white",
+    opacity = 0.5
+  ) %>%
+  addCircleMarkers(
+    lng = ~Longitude,
+    lat = ~Latitude,
+    radius = 10,
+    stroke = TRUE,
+    color = "black",
+    weight = 1,
+    opacity = 0.8,
+    fillColor = ~rain_pal(InchesOfRain),
+    fillOpacity = 0.9,
+    popup = ~paste0(
+      "<div style='background-color: rgba(255, 255, 255, 0.9); border-radius: 5px; padding: 6px;'>",
+      "<strong>", City, "</strong><br>",
+      "Avg Monthly Rainfall: ", InchesOfRain, " in<br>",
+      "Elevation: ", comma(ElevationFeet), " ft<br>",
+      "Metro Population (2024): ", comma(MetroAreaPopJuly1st2024), "<br>",
+      "Avg High Temp: ", round(AnnualAVGHighTemperatureF, 1), " °F<br>",
+      "Avg Low Temp: ", round(AnnualAVGLowTemperatureF, 1), " °F<br>",
+      "Avg Humidity: ", round(AnnualAVGRelativeHumidity, 1), " %",
+      "</div>"
+    )
+  ) %>%
+  addLabelOnlyMarkers(
+    lng = ~Longitude,
+    lat = ~Latitude,
+    label = ~as.character(Rank),
+    labelOptions = labelOptions(
+      noHide = TRUE,
+      direction = 'center',
+      textOnly = TRUE,
+      style = list(
+        "color" = "orange",
+        "font-weight" = "bold",
+        "font-size" = "14px",
+        "text-shadow" = "1px 1px 2px black"
+      )
+    )
+  ) %>%
+  addLegend(
+    "bottomright",
+    pal = rain_pal,
+    values = ~InchesOfRain,
+    title = "Inches of Rain",
+    opacity = 1
+  )
+```
+
+This dynamic map is inspired by the format of the original and meant to act as an improved version. It preserves the original emphasis of the ranks of the 10 cities and shows their locations, but the color scale is now more intuitive, with the darker blue values having more rainfall rather than the original lighter red points having more rainfall.
+
+With this being a dynamic map, the user can now zoom in with a satellite view and get a look at what the ten driest cities in the US look like. The viewer can also click on the data points to reveal more information. This map has some more information about each city that one might want to know, with some of the new information relating to dryness.
+
+When looking at the new data it can be observed that temperature values and humidity levels are somewhat correlated with rainfall in these cities, but it is possible for one city to have more rainfall than another but still be hotter and less humid.
+
+Sources for Additional data used in the 2nd visualization:\
+- Wikipedia: Latitude/longitude and elevation Values\
+- US Census Bureau: Metropolitan area population values\
+- Weatherandclimate.com: Temperature and humidity values

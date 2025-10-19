@@ -1,0 +1,40 @@
+---
+title: "Hello and Welcome!"
+format: html
+---
+
+# 👋 Hello!
+
+Welcome to our **Data Visualization Project**.\
+We’re excited to share our work and connect with others interested in turning data into insights.
+
+## 📊 Featured Visualizations
+
+-   U.S. Opioid Dispensing Rates (2019&2023)
+    -   Redesigned to highlight key trends using a **heat map** and **stacked bar chart**.
+-   The Ten Driest Cities in the United States
+    -   Made cleaner using a **bar chart** and **dynamic map**.
+
+## 👩‍💻 Our Team
+
+**Diane Kim** — Data Analytics Engineering graduate student at GMU, passionate about health analytics and visualization.\
+**Sean Grieg** — Data Analytics Engineering graduate student at GMU, focused on storytelling through data and interactive dashboards.
+
+## 🛠️ Tools & Methods
+
+-   **R & Quarto** for data processing and visualization\
+-   **ggplot2** and **Plotly** for charts\
+-   **GeoJSON** & **Leaflet** for interactive maps\
+-   **Data Sources:** Centers for Disease Control, World Atlas, Wikipedia (Latitude & Elevation Values) & US Census Bureau
+
+------------------------------------------------------------------------
+
+## 📧 Contact Us
+
+![](https://static.vecteezy.com/system/resources/previews/002/205/854/non_2x/email-icon-free-vector.jpg){width="3%"} [Email Diane Kim](dianekim015@gmail.com) ![](https://upload.wikimedia.org/wikipedia/commons/9/91/Octicons-mark-github.svg){width="3%"}[Diane’s GitHub](https://github.com/dianokong)
+
+![](https://static.vecteezy.com/system/resources/previews/002/205/854/non_2x/email-icon-free-vector.jpg){width="3%" style="font-size: 11pt;"} [Email Sean Grieg](sgrieg@gmu.edu) ![](https://upload.wikimedia.org/wikipedia/commons/9/91/Octicons-mark-github.svg){width="3%"}[Sean's GitHub](https://github.com/sgrieg) 
+
+------------------------------------------------------------------------
+
+Thank you for visiting! 🎉
