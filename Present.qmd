@@ -1,0 +1,6 @@
+---
+title: "Video Presentation - Sean & Diane"
+format: html
+---
+
+{{< video https://www.youtube.com/embed/W9tQNZGaIoQ?si=lhNSzc53VZyUzt0I >}}
